@@ -2,7 +2,7 @@
 # Safra key! Get new one!
 FRED_key() = "c9e84df4d5b609afe2db4711f06c84d2"
 
-function get_series(id::String; frequency=nothing, aggmethod=nothing)
+function get(id::String; frequency=nothing, aggmethod=nothing)
 
     # parameters
     params = Dict(
@@ -12,13 +12,14 @@ function get_series(id::String; frequency=nothing, aggmethod=nothing)
     )
 
     !isnothing(frequency) && merge!(params, Dict("frequency" => frequency))
-    !isnothing(aggmethod) && merge!(params, Dict("aggregation_method" => aggmethod))
+    !isnothing(aggmethod) && merge!(params,
+        Dict("aggregation_method" => aggmethod))
 
     # download the data
-    d = HTTP.request("GET", "https://api.stlouisfed.org/fred/series/observations", query=params)
+    d = HTTP.request("GET",
+        "https://api.stlouisfed.org/fred/series/observations", query=params)
     jfile = String(copy(d.body))
     F = JSON.parse(jfile)
-    println("$id series successfully fetched")
 
     # DataFrame
     data = F["observations"]
@@ -44,15 +45,16 @@ function get_series(id::String; frequency=nothing, aggmethod=nothing)
     return df
 end
 
-function get_series(id_vec::Vector{String};
+function get(id_vec::Vector{String};
     frequency=nothing,
     aggmethod=nothing)
 
     # DataFrame
     df = DataFrame("date" => Vector{Date}(undef, 0))
     for id in id_vec
-        gh = get_series(id, frequency=frequency, aggmethod=aggmethod)
+        gh = get(id, frequency=frequency, aggmethod=aggmethod)
         df = outerjoin(df, gh, on=:date)
+        println("$id done.")
     end
 
     sort!(df, :date)
@@ -61,8 +63,8 @@ function get_series(id_vec::Vector{String};
     return df
 end
 
-function get_series(df, id; frequency=nothing, aggmethod=nothing)
-    nd = get_series(id, frequency=frequency, aggmethod=aggmethod)
+function get(df, id; frequency=nothing, aggmethod=nothing)
+    nd = get(id, frequency=frequency, aggmethod=aggmethod)
     df = outerjoin(df, nd, on=:date)
     sort!(df, :date)
     df = coalesce.(df, NaN)
